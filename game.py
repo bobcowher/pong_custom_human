@@ -8,28 +8,49 @@ import time
 
 class Pong:
 
-    def __init__(self, window_width=1280, window_height=960, fps=60, player1="human", player2="bot"):
+    def __init__(self, window_width=None, window_height=None, fps=60, player1="human", player2="bot"):
         
-        self.window_width = window_width
-        self.window_height = window_height
-
         pygame.init()
+        
+        # Get screen dimensions and calculate scaling
+        info = pygame.display.Info()
+        screen_width = info.current_w
+        screen_height = info.current_h
+        
+        # Reference dimensions (4K monitor baseline)
+        self.reference_width = 1280
+        self.reference_height = 960
+        
+        # If no dimensions provided, use 80% of screen width maintaining aspect ratio
+        if window_width is None or window_height is None:
+            self.window_width = int(screen_width * 0.8)
+            self.window_height = int(self.window_width * (self.reference_height / self.reference_width))
+        else:
+            self.window_width = window_width
+            self.window_height = window_height
+        
+        # Calculate scaling factor based on window width
+        self.scale_factor = self.window_width / self.reference_width
+        
         pygame.display.set_caption("Pong")
 
+        self.off_screen_surface = pygame.Surface((self.window_width, self.window_height))
         self.clock = pygame.time.Clock()
-        self.screen = pygame.display.set_mode((window_width, window_height))
+        self.screen = pygame.display.set_mode((self.window_width, self.window_height))
         self.fps = fps
 
         self.background_color = (0, 0, 0)
 
-        self.paddle_height = 120
-        self.paddle_width = 20
+        # Scale all dimensions based on screen size
+        self.paddle_height = int(120 * self.scale_factor)
+        self.paddle_width = int(20 * self.scale_factor)
        
         self.player_1_color = (50, 205, 50)
         self.player_2_color = (138, 43, 226)
         
-        self.font = pygame.font.SysFont(None, 70)
-        self.announcement_font = pygame.font.SysFont(None, 150)
+        # Scale fonts
+        self.font = pygame.font.SysFont(None, int(70 * self.scale_factor))
+        self.announcement_font = pygame.font.SysFont(None, int(150 * self.scale_factor))
 
         self.player1 = player1
         self.player2 = player2
@@ -37,28 +58,37 @@ class Pong:
         self.player_1_score = 0
         self.player_2_score = 0
 
-        self.top_score = 20 
+        self.top_score = 20
 
-        self.player_1_paddle = Paddle(x=window_width - 2 * (window_width / 64), 
-                                      y=(window_height / 2) - (self.paddle_height / 2), 
-                                      player_color=self.player_1_color, 
-                                      height=self.paddle_height,
-                                      width=self.paddle_width,
-                                      window_height=window_height); 
+        # Scale paddle positions
+        paddle_margin = int(self.window_width / 64)
         
-        self.player_2_paddle = Paddle(x=(window_width / 64), 
-                                      y=(window_height / 2) - (self.paddle_height / 2), 
-                                      player_color=self.player_2_color, 
+        self.player_1_paddle = Paddle(x=self.window_width - paddle_margin - self.paddle_width,
+                                      y=(self.window_height / 2) - (self.paddle_height / 2),
+                                      player_color=self.player_1_color,
                                       height=self.paddle_height,
                                       width=self.paddle_width,
-                                      window_height=window_height); 
+                                      window_height=self.window_height,
+                                      scale_factor=self.scale_factor);
+        
+        self.player_2_paddle = Paddle(x=paddle_margin,
+                                      y=(self.window_height / 2) - (self.paddle_height / 2),
+                                      player_color=self.player_2_color,
+                                      height=self.paddle_height,
+                                      width=self.paddle_width,
+                                      window_height=self.window_height,
+                                      scale_factor=self.scale_factor);
 
-        self.ball = Ball(window_height=window_height,
-                         window_width=window_width,
-                         height=20,
-                         width=20,
+        # Scale ball size
+        ball_size = int(20 * self.scale_factor)
+        
+        self.ball = Ball(window_height=self.window_height,
+                         window_width=self.window_width,
+                         height=ball_size,
+                         width=ball_size,
                          player_1_paddle=self.player_1_paddle,
-                         player_2_paddle=self.player_2_paddle)
+                         player_2_paddle=self.player_2_paddle,
+                         scale_factor=self.scale_factor)
 
         self.bot_move_queue = []
 
@@ -141,19 +171,30 @@ class Pong:
     def fill_background(self):
         self.screen.fill(self.background_color)
 
+        # Scale UI element spacing
+        margin = int(20 * self.scale_factor)
+        ui_y = int(10 * self.scale_factor)
+        
         player_1_score_surface = self.font.render(f'Score: {self.player_1_score}', True, self.player_1_color)
-        self.screen.blit(player_1_score_surface, ((self.window_width / 2) + 20, 10))
+        self.screen.blit(player_1_score_surface, ((self.window_width / 2) + margin, ui_y))
         
         player_2_score_surface = self.font.render(f'Score: {self.player_2_score}', True, self.player_2_color)
-        self.screen.blit(player_2_score_surface, ((self.window_width / 2) - player_2_score_surface.get_width() - 20, 10))
+        self.screen.blit(player_2_score_surface, ((self.window_width / 2) - player_2_score_surface.get_width() - margin, ui_y))
 
 
     def step(self):
+        # Render directly to the main screen (no need for off-screen surface scaling)
+        self.screen.fill(self.background_color)
+        
+        # Draw score
         self.fill_background()
+        
+        # Draw game elements
         self.player_1_paddle.draw(screen=self.screen)
         self.player_2_paddle.draw(screen=self.screen)
         self.ball.move()
         self.ball.draw(screen=self.screen)
+        
         self.clock.tick(self.fps)
         pygame.display.flip()
 
@@ -165,7 +206,7 @@ class Pong:
             self.ball.spawn()
 
 
-        if(self.player_1_score >= self.top_score or 
+        if(self.player_1_score >= self.top_score or
            self.player_2_score >= self.top_score):
             self.game_over()
 
