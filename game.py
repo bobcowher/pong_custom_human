@@ -132,21 +132,28 @@ class Pong:
     def get_bot_move(self):
          
         random_target = 0.02
-        rqueue = 4 
+        rqueue = 5 
 
         if self.bot_move_queue.__len__() > 0:
-            pass 
+            pass
         elif random.random() <= random_target:
             next_move = random.randint(0, 2)
             
             for i in range(rqueue):
                 self.bot_move_queue.append(next_move)
         else:
-            if(self.ball.vy > 0):
+            if(self.ball.y > (self.player_2_paddle.y + 10)):
                 self.bot_move_queue.append(2)
-            else:
+                self.bot_move_queue.append(2)
+                self.bot_move_queue.append(2)
+            elif(self.ball.y < (self.player_2_paddle.y - 10)):
                 self.bot_move_queue.append(1)
+                self.bot_move_queue.append(1)
+                self.bot_move_queue.append(1)
+            else:
+                self.bot_move_queue.append(0)
 
+        print(self.bot_move_queue)
         return self.bot_move_queue.pop(0)       
 
 
