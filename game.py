@@ -153,7 +153,7 @@ class Pong:
             else:
                 self.bot_move_queue.append(0)
 
-        print(self.bot_move_queue)
+        # print(self.bot_move_queue)
         return self.bot_move_queue.pop(0)       
 
 
@@ -225,7 +225,10 @@ class Pong:
         """Setup and start background music"""
         try:
             # Try to load the arcade-beat.mp3 file
-            music_path = os.path.join("music", "arcade-beat.mp3")
+            if hasattr(sys, '_MEIPASS'):
+                music_path = os.path.join(sys._MEIPASS, "music", "arcade-beat.mp3")
+            else:
+                music_path = os.path.join("music", "arcade-beat.mp3")
             
             if os.path.exists(music_path):
                 # Load and play the MP3 file
